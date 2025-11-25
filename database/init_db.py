@@ -72,6 +72,7 @@ def initialize_tables(db_path: str) -> None:
         lesson_id INTEGER,
         task_id INTEGER,
         status TEXT DEFAULT 'not_started',
+        unlocked INTEGER DEFAULT 0,
         FOREIGN KEY(module_id) REFERENCES modules(id),
         FOREIGN KEY(lesson_id) REFERENCES lessons(id),
         FOREIGN KEY(task_id) REFERENCES tasks(id)
@@ -165,7 +166,6 @@ def _insert_default_data(conn: sqlite3.Connection) -> None:
         "exercise_prompt": "Écrivez un programme avec un commentaire expliquant ce que fait le code, suivi d'un print().",
         "exercise_solution": "# Ce programme affiche un message de bienvenue\nprint('Bienvenue dans PyLearn!')"
     })
-
     # ------------------------------------------------------------------
     # Insert initial progression for user 1 (first lesson unlocked)
     # ------------------------------------------------------------------
@@ -174,7 +174,35 @@ def _insert_default_data(conn: sqlite3.Connection) -> None:
         (1, 1, 1, "in_progress")
     )
 
+    # Initialize task progression (first task of each lesson unlocked)
+    _initialize_task_progression(cursor)
+
     conn.commit()
+
+
+def _initialize_task_progression(cursor) -> None:
+    """Initialize progression for all tasks. First task of each lesson is unlocked."""
+    # Get all lessons
+    cursor.execute("SELECT id FROM lessons ORDER BY id")
+    lesson_ids = [row[0] for row in cursor.fetchall()]
+
+    for lesson_id in lesson_ids:
+        # Get tasks for this lesson ordered by id
+        cursor.execute(
+            "SELECT id FROM tasks WHERE lesson_id = ? ORDER BY id",
+            (lesson_id,)
+        )
+        task_ids = [row[0] for row in cursor.fetchall()]
+
+        for idx, task_id in enumerate(task_ids):
+            # First task is unlocked, others are locked
+            unlocked = 1 if idx == 0 else 0
+            status = "not_started"
+            
+            cursor.execute("""
+                INSERT INTO progression (user_id, task_id, lesson_id, status, unlocked)
+                VALUES (?, ?, ?, ?, ?)
+            """, (1, task_id, lesson_id, status, unlocked))
 
 
 def _insert_lesson_tasks(cursor, lesson_id: int, content: dict) -> None:

@@ -3,11 +3,12 @@
 
 import os
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QMessageBox
 
 from database.db import Database
 from controllers.module_controller import ModuleController
 from controllers.lesson_controller import LessonController
+from controllers.task_controller import TaskController
 from navigation_manager import NavigationManager
 from gui.home_view import HomeView
 from gui.modules_view import ModulesView
@@ -29,12 +30,14 @@ class MainWindow(QMainWindow):
         # Controllers for fetching data
         self.module_controller = ModuleController()
         self.lesson_controller = LessonController()
+        self.task_controller = TaskController()
 
         # Store current context for navigation
         self.current_module_id = None
         self.current_module_name = ""
         self.current_lesson_id = None
         self.current_lesson_name = ""
+        self.current_task_id = None
 
         # Stacked widget for navigation between views
         self.stacked_widget = QStackedWidget()
@@ -109,6 +112,11 @@ class MainWindow(QMainWindow):
             self._on_navigate_to_exercise
         )
 
+        # Task selection tracking
+        self.tasks_view.task_selected.connect(
+            self._on_task_selected
+        )
+
         # Back navigation signals
         self.modules_view.navigate_back.connect(
             lambda: self.navigation.navigate("home")
@@ -161,6 +169,10 @@ class MainWindow(QMainWindow):
         self.tasks_view.load_tasks(lesson_id, self.current_lesson_name)
         self.navigation.navigate("tasks")
 
+    def _on_task_selected(self, task_id: int) -> None:
+        """Handle task selection - store current task ID."""
+        self.current_task_id = task_id
+
     def _on_navigate_to_quiz(self, task_id: int) -> None:
         """Handle navigation to quiz view."""
         # TODO: Load quiz content based on task_id
@@ -192,6 +204,47 @@ class MainWindow(QMainWindow):
         if self.current_lesson_id:
             self.tasks_view.load_tasks(self.current_lesson_id, self.current_lesson_name)
         self.navigation.navigate("tasks")
+
+    # ------------------------------------------------------------------
+    # Task Validation Methods
+    # ------------------------------------------------------------------
+
+    def validate_current_task(self, task_id: int, user_input: str) -> dict:
+        """
+        Validate the current task with user input.
+
+        Args:
+            task_id: The ID of the task to validate
+            user_input: The user's input/answer
+
+        Returns:
+            Dict with validation result:
+                - success: bool
+                - message: str
+                - unlock_next: bool
+        """
+        result = self.task_controller.validate_task(task_id, user_input)
+
+        # Show feedback to user
+        if result["success"]:
+            QMessageBox.information(
+                self,
+                "Succès ! 🎉",
+                result["message"],
+                QMessageBox.Ok
+            )
+            # Refresh tasks view to show updated status
+            if self.current_lesson_id:
+                self.tasks_view.load_tasks(self.current_lesson_id, self.current_lesson_name)
+        else:
+            QMessageBox.warning(
+                self,
+                "Réessayez",
+                result["message"],
+                QMessageBox.Ok
+            )
+
+        return result
 
     def navigate_to(self, view_name: str) -> None:
         """Switch the current widget in the stacked widget by view name."""

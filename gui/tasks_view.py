@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QRadioButton,
     QButtonGroup,
+    QMessageBox,
 )
 from controllers.task_controller import TaskController
 
@@ -37,12 +38,14 @@ class TasksView(QWidget):
     navigate_to_typing = Signal(int)    # Emits task_id
     navigate_to_exercise = Signal(int)  # Emits task_id
     navigate_back = Signal()
+    validation_requested = Signal(int, str)  # Emits (task_id, user_input)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.controller = TaskController()
         self.tasks = []
         self.current_lesson_id = None
+        self.current_lesson_name = ""
         self.current_task_index = 0
         self.current_task_data = {}
         self._setup_ui()
@@ -359,6 +362,7 @@ class TasksView(QWidget):
     def load_tasks(self, lesson_id: int, lesson_name: str = ""):
         """Load tasks for a specific lesson."""
         self.current_lesson_id = lesson_id
+        self.current_lesson_name = lesson_name
         self.current_task_index = 0
 
         # Update sidebar title
@@ -371,20 +375,35 @@ class TasksView(QWidget):
         self.task_list.clear()
         self.tasks = self.controller.load_tasks(lesson_id)
 
-        # Populate task list
+        # Populate task list with status icons
         for task in self.tasks:
-            icon = "✔" if task["is_completed"] else "○"
+            if task["is_completed"]:
+                icon = "✔"
+            elif task["is_unlocked"]:
+                icon = "○"
+            else:
+                icon = "🔒"
+            
             item = QListWidgetItem(f"{icon}  {task['name']}")
             item.setData(Qt.UserRole, task["id"])
+            
+            # Disable locked tasks visually
+            if not task["is_unlocked"] and not task["is_completed"]:
+                item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+            
             self.task_list.addItem(item)
 
         # Update progress
         completed = sum(1 for t in self.tasks if t["is_completed"])
         self.progress_label.setText(f"Progression: {completed}/{len(self.tasks)}")
 
-        # Select first task
+        # Select first unlocked task
+        first_unlocked = next(
+            (i for i, t in enumerate(self.tasks) if t["is_unlocked"] and not t["is_completed"]),
+            0
+        )
         if self.tasks:
-            self.task_list.setCurrentRow(0)
+            self.task_list.setCurrentRow(first_unlocked)
 
     def _on_task_selected(self, row: int):
         """Handle task selection from the list."""
@@ -393,6 +412,18 @@ class TasksView(QWidget):
 
         self.current_task_index = row
         task = self.tasks[row]
+
+        # Check if task is locked
+        if not task["is_unlocked"] and not task["is_completed"]:
+            self.task_title.setText("🔒 Tâche verrouillée")
+            self.task_description.setText("Complétez les tâches précédentes pour débloquer celle-ci.")
+            self.content_stack.setCurrentIndex(0)
+            self.theory_content.setText("Cette tâche est verrouillée.\n\nVeuillez compléter les tâches précédentes.")
+            self.validate_btn.setEnabled(False)
+            return
+
+        # Enable validate button
+        self.validate_btn.setEnabled(True)
 
         # Load full task content from controller
         task_id = task["id"]
@@ -467,27 +498,86 @@ class TasksView(QWidget):
         self.validate_btn.setText("Soumettre")
 
     # ------------------------------------------------------------------
-    # Signal emitters and handlers
+    # Validation and Signal Handlers
     # ------------------------------------------------------------------
     def _on_validate(self):
-        """Handle validate button click."""
+        """Handle validate button click - collect input and validate."""
         if not self.tasks or self.current_task_index >= len(self.tasks):
             return
 
         task = self.tasks[self.current_task_index]
+        task_id = task["id"]
         task_type = task["task_type"]
 
-        # Mark task as completed (no validation logic yet)
-        self.controller.mark_task_completed(task["id"])
-        
-        # Refresh task list to update status
-        self.load_tasks(self.current_lesson_id, self.sidebar_title.text())
-        
-        # Reselect the current task (or next if available)
-        if self.current_task_index < len(self.tasks) - 1:
-            self.task_list.setCurrentRow(self.current_task_index + 1)
+        # Collect user input based on task type
+        user_input = self._collect_user_input(task_type)
+
+        # Call validation through controller
+        result = self.controller.validate_task(task_id, user_input)
+
+        # Show result message
+        self._show_validation_result(result)
+
+        # Refresh task list to update status icons
+        if result["success"]:
+            self._refresh_after_validation()
+
+    def _collect_user_input(self, task_type: str) -> str:
+        """Collect user input based on task type."""
+        if task_type == "theory":
+            return ""  # No input needed for theory
+        elif task_type == "quiz":
+            return self.quiz_answer_input.toPlainText()
+        elif task_type == "typing":
+            return self.typing_input.toPlainText()
+        elif task_type == "exercise":
+            return self.exercise_input.toPlainText()
+        return ""
+
+    def _show_validation_result(self, result: dict) -> None:
+        """Show validation result in a message box."""
+        success = result.get("success", False)
+        message = result.get("message", "")
+
+        if success:
+            QMessageBox.information(
+                self,
+                "Succès ! 🎉",
+                message,
+                QMessageBox.Ok
+            )
         else:
-            self.task_list.setCurrentRow(self.current_task_index)
+            QMessageBox.warning(
+                self,
+                "Réessayez",
+                message,
+                QMessageBox.Ok
+            )
+
+    def _refresh_after_validation(self) -> None:
+        """Refresh the view after successful validation."""
+        # Store current position
+        current_row = self.current_task_index
+
+        # Reload tasks to get updated status
+        self.load_tasks(self.current_lesson_id, self.current_lesson_name)
+
+        # Move to next task if available and unlocked
+        if current_row < len(self.tasks) - 1:
+            next_task = self.tasks[current_row + 1]
+            if next_task["is_unlocked"]:
+                self.task_list.setCurrentRow(current_row + 1)
+            else:
+                self.task_list.setCurrentRow(current_row)
+        else:
+            self.task_list.setCurrentRow(current_row)
+
+    def validate_from_external(self, task_id: int, user_input: str) -> dict:
+        """
+        Validate task from external caller (MainWindow).
+        Returns validation result dict.
+        """
+        return self.controller.validate_task(task_id, user_input)
 
     def _on_next(self):
         """Handle next button click."""
