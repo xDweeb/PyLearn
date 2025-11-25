@@ -18,8 +18,10 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QButtonGroup,
     QMessageBox,
+    QProgressBar,
 )
 from controllers.task_controller import TaskController
+from controllers.progression_manager import ProgressionManager
 
 
 class TasksView(QWidget):
@@ -43,6 +45,7 @@ class TasksView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.controller = TaskController()
+        self.progression_manager = ProgressionManager()
         self.tasks = []
         self.current_lesson_id = None
         self.current_lesson_name = ""
@@ -94,6 +97,30 @@ class TasksView(QWidget):
         self.task_list.setObjectName("taskList")
         self.task_list.currentRowChanged.connect(self._on_task_selected)
         layout.addWidget(self.task_list)
+
+        # Progress bar
+        self.task_progress_bar = QProgressBar()
+        self.task_progress_bar.setObjectName("taskProgressBar")
+        self.task_progress_bar.setMinimum(0)
+        self.task_progress_bar.setMaximum(100)
+        self.task_progress_bar.setValue(0)
+        self.task_progress_bar.setTextVisible(True)
+        self.task_progress_bar.setFixedHeight(20)
+        self.task_progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #e8e8e8;
+                text-align: center;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QProgressBar::chunk {
+                background-color: #27ae60;
+                border-radius: 3px;
+            }
+        """)
+        layout.addWidget(self.task_progress_bar)
 
         # Progress info
         self.progress_label = QLabel("Progression: 0/0")
@@ -375,11 +402,16 @@ class TasksView(QWidget):
         self.task_list.clear()
         self.tasks = self.controller.load_tasks(lesson_id)
 
-        # Populate task list with status icons
+        # Populate task list with status icons based on progression
         for task in self.tasks:
-            if task["is_completed"]:
+            # Get dynamic status from progression manager
+            task_status = self.progression_manager.get_task_status(task["id"])
+            is_completed = task_status["is_completed"]
+            is_unlocked = task_status["unlocked"] or task["is_unlocked"]
+            
+            if is_completed:
                 icon = "✔"
-            elif task["is_unlocked"]:
+            elif is_unlocked:
                 icon = "○"
             else:
                 icon = "🔒"
@@ -388,14 +420,20 @@ class TasksView(QWidget):
             item.setData(Qt.UserRole, task["id"])
             
             # Disable locked tasks visually
-            if not task["is_unlocked"] and not task["is_completed"]:
+            if not is_unlocked and not is_completed:
                 item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
             
             self.task_list.addItem(item)
 
-        # Update progress
-        completed = sum(1 for t in self.tasks if t["is_completed"])
-        self.progress_label.setText(f"Progression: {completed}/{len(self.tasks)}")
+        # Update progress using ProgressionManager
+        progress = self.progression_manager.get_lesson_progress(lesson_id)
+        completed = progress["completed"]
+        total = progress["total"]
+        percent = progress["percent"]
+        
+        self.progress_label.setText(f"Progression: {completed}/{total}")
+        self.task_progress_bar.setValue(percent)
+        self.task_progress_bar.setFormat(f"{percent}%")
 
         # Select first unlocked task
         first_unlocked = next(

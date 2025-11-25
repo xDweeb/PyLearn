@@ -3,10 +3,11 @@
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QScrollArea, QFrame, QGridLayout
+    QScrollArea, QFrame, QGridLayout, QProgressBar
 )
 from PySide6.QtCore import Signal, Qt
 from controllers.module_controller import ModuleController
+from controllers.progression_manager import ProgressionManager
 
 
 class ModulesView(QWidget):
@@ -19,6 +20,7 @@ class ModulesView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.controller = ModuleController()
+        self.progression_manager = ProgressionManager()
         self.modules = []
         self._setup_ui()
 
@@ -90,15 +92,15 @@ class ModulesView(QWidget):
         """Create a card widget for a module."""
         card = QFrame()
         card.setObjectName("moduleCard")
-        card.setFixedSize(280, 200)
+        card.setFixedSize(280, 220)
         
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(20, 20, 20, 20)
-        card_layout.setSpacing(10)
+        card_layout.setSpacing(8)
 
         # Lock icon or module number
         if module["is_unlocked"]:
-            icon_text = f"📘"
+            icon_text = "📘"
         else:
             icon_text = "🔒"
         
@@ -121,11 +123,38 @@ class ModulesView(QWidget):
         desc_label.setWordWrap(True)
         card_layout.addWidget(desc_label)
 
+        # Progress bar
+        progress = self.progression_manager.get_module_progress(module["id"])
+        progress_bar = QProgressBar()
+        progress_bar.setObjectName("moduleProgressBar")
+        progress_bar.setMinimum(0)
+        progress_bar.setMaximum(100)
+        progress_bar.setValue(progress["percent"])
+        progress_bar.setFormat(f"{progress['percent']}%")
+        progress_bar.setTextVisible(True)
+        progress_bar.setFixedHeight(18)
+        progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                text-align: center;
+                font-size: 11px;
+                font-weight: bold;
+            }
+            QProgressBar::chunk {
+                background-color: #3c78d8;
+                border-radius: 3px;
+            }
+        """)
+        card_layout.addWidget(progress_bar)
+
         card_layout.addStretch()
 
         # Button
         if module["is_unlocked"]:
-            btn = QPushButton("Commencer")
+            btn_text = "Continuer" if progress["percent"] > 0 else "Commencer"
+            btn = QPushButton(btn_text)
             btn.setObjectName("primaryButton")
             btn.clicked.connect(lambda checked, m_id=module["id"]: self.navigate_to_lessons.emit(m_id))
         else:

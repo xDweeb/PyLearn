@@ -9,6 +9,7 @@ from database.db import Database
 from controllers.module_controller import ModuleController
 from controllers.lesson_controller import LessonController
 from controllers.task_controller import TaskController
+from controllers.progression_manager import ProgressionManager
 from navigation_manager import NavigationManager
 from gui.home_view import HomeView
 from gui.modules_view import ModulesView
@@ -17,6 +18,7 @@ from gui.tasks_view import TasksView
 from gui.quiz_view import QuizView
 from gui.exercise_view import ExerciseView
 from gui.typing_view import TypingView
+from gui.statistics_view import StatisticsView
 
 
 class MainWindow(QMainWindow):
@@ -31,6 +33,7 @@ class MainWindow(QMainWindow):
         self.module_controller = ModuleController()
         self.lesson_controller = LessonController()
         self.task_controller = TaskController()
+        self.progression_manager = ProgressionManager()
 
         # Store current context for navigation
         self.current_module_id = None
@@ -64,6 +67,7 @@ class MainWindow(QMainWindow):
         self.quiz_view = QuizView()
         self.exercise_view = ExerciseView()
         self.typing_view = TypingView()
+        self.statistics_view = StatisticsView()
 
     def _register_views(self) -> None:
         """Add views to stacked widget and register them in NavigationManager."""
@@ -75,6 +79,7 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.quiz_view)
         self.stacked_widget.addWidget(self.exercise_view)
         self.stacked_widget.addWidget(self.typing_view)
+        self.stacked_widget.addWidget(self.statistics_view)
 
         # Register views by name
         self.navigation.register_view("home", self.home_view)
@@ -84,12 +89,17 @@ class MainWindow(QMainWindow):
         self.navigation.register_view("quiz", self.quiz_view)
         self.navigation.register_view("exercise", self.exercise_view)
         self.navigation.register_view("typing", self.typing_view)
+        self.navigation.register_view("statistics", self.statistics_view)
 
     def _connect_navigation_signals(self) -> None:
         """Connect navigation signals from views to navigation actions."""
         # Forward navigation signals
         self.home_view.navigate_to_modules.connect(
             self._on_navigate_to_modules
+        )
+
+        self.home_view.navigate_to_statistics.connect(
+            self._on_navigate_to_statistics
         )
 
         self.modules_view.navigate_to_lessons.connect(
@@ -119,7 +129,7 @@ class MainWindow(QMainWindow):
 
         # Back navigation signals
         self.modules_view.navigate_back.connect(
-            lambda: self.navigation.navigate("home")
+            self._on_back_to_home
         )
 
         self.lessons_view.navigate_back.connect(
@@ -141,6 +151,21 @@ class MainWindow(QMainWindow):
         self.exercise_view.navigate_back.connect(
             self._on_back_to_tasks
         )
+
+        # Statistics view back navigation
+        self.statistics_view.navigate_back.connect(
+            self._on_back_to_home
+        )
+
+    def _on_back_to_home(self) -> None:
+        """Handle back navigation to home view (refresh data)."""
+        self.home_view.refresh_data()
+        self.navigation.navigate("home")
+
+    def _on_navigate_to_statistics(self) -> None:
+        """Handle navigation to statistics view."""
+        self.statistics_view.load_statistics()
+        self.navigation.navigate("statistics")
 
     def _on_navigate_to_modules(self) -> None:
         """Handle navigation to modules view."""

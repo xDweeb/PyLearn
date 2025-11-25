@@ -11,8 +11,10 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QFrame,
+    QProgressBar,
 )
 from controllers.lesson_controller import LessonController
+from controllers.progression_manager import ProgressionManager
 
 
 class LessonsView(QWidget):
@@ -31,6 +33,7 @@ class LessonsView(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.controller = LessonController()
+        self.progression_manager = ProgressionManager()
         self.lessons = []
         self.current_module_id = None
         # Placeholder module name; can be updated later by controllers
@@ -118,7 +121,7 @@ class LessonsView(QWidget):
         """Create a card widget for a lesson."""
         card = QFrame()
         card.setObjectName("lessonCard")
-        card.setFixedHeight(80)
+        card.setFixedHeight(100)
 
         card_layout = QHBoxLayout(card)
         card_layout.setContentsMargins(20, 15, 20, 15)
@@ -149,9 +152,9 @@ class LessonsView(QWidget):
         num_label.setFixedWidth(30)
         card_layout.addWidget(num_label)
 
-        # Lesson info
+        # Lesson info with progress bar
         info_layout = QVBoxLayout()
-        info_layout.setSpacing(2)
+        info_layout.setSpacing(4)
 
         name_label = QLabel(lesson["name"])
         name_label.setObjectName("lessonTitle")
@@ -160,6 +163,31 @@ class LessonsView(QWidget):
         desc_label = QLabel(lesson["description"])
         desc_label.setObjectName("lessonDescription")
         info_layout.addWidget(desc_label)
+
+        # Progress bar for lesson
+        progress = self.progression_manager.get_lesson_progress(lesson["id"])
+        progress_bar = QProgressBar()
+        progress_bar.setObjectName("lessonProgressBar")
+        progress_bar.setMinimum(0)
+        progress_bar.setMaximum(100)
+        progress_bar.setValue(progress["percent"])
+        progress_bar.setFormat(f"{progress['completed']}/{progress['total']} tâches ({progress['percent']}%)")
+        progress_bar.setTextVisible(True)
+        progress_bar.setFixedHeight(16)
+        progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #ddd;
+                border-radius: 3px;
+                background-color: #f0f0f0;
+                text-align: center;
+                font-size: 10px;
+            }
+            QProgressBar::chunk {
+                background-color: #27ae60;
+                border-radius: 2px;
+            }
+        """)
+        info_layout.addWidget(progress_bar)
 
         card_layout.addLayout(info_layout, 1)
 
