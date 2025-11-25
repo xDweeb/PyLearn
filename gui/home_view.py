@@ -166,13 +166,13 @@ class HomeView(QWidget):
         self.progress_label.setText(f"Progression globale: {global_percent}%")
 
         # Load modules from database
-        modules = self.module_controller.get_all_modules()
+        modules = self.module_controller.load_modules()
 
         # Show first 3 modules as preview
         for module in modules[:3]:
             module_id = module.get("id")
-            title = module.get("title", "Module")
-            unlocked = module.get("unlocked", False)
+            title = module.get("name", "Module")
+            unlocked = module.get("is_unlocked", False)
 
             # Get progress for this module
             progress = self.progression_manager.get_module_progress(module_id)
