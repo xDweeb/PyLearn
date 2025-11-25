@@ -14,6 +14,9 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QStackedWidget,
     QTextEdit,
+    QScrollArea,
+    QRadioButton,
+    QButtonGroup,
 )
 from controllers.task_controller import TaskController
 
@@ -41,6 +44,7 @@ class TasksView(QWidget):
         self.tasks = []
         self.current_lesson_id = None
         self.current_task_index = 0
+        self.current_task_data = {}
         self._setup_ui()
 
     # ------------------------------------------------------------------
@@ -118,17 +122,17 @@ class TasksView(QWidget):
         # Content stack for different task types
         self.content_stack = QStackedWidget()
 
-        # Theory content
-        self.theory_content = QTextEdit()
-        self.theory_content.setObjectName("theoryContent")
-        self.theory_content.setReadOnly(True)
-        self.content_stack.addWidget(self.theory_content)
-
-        # Placeholder for other task types
-        placeholder = QLabel("Cliquez sur 'Commencer' pour accéder à cette tâche.")
-        placeholder.setAlignment(Qt.AlignCenter)
-        placeholder.setStyleSheet("color: #7f8c8d; font-size: 14px;")
-        self.content_stack.addWidget(placeholder)
+        # Index 0: Theory content
+        self._create_theory_widget()
+        
+        # Index 1: Quiz content
+        self._create_quiz_widget()
+        
+        # Index 2: Typing content
+        self._create_typing_widget()
+        
+        # Index 3: Exercise content
+        self._create_exercise_widget()
 
         layout.addWidget(self.content_stack, 1)
 
@@ -151,6 +155,203 @@ class TasksView(QWidget):
         layout.addLayout(btn_layout)
 
         return content
+
+    def _create_theory_widget(self) -> None:
+        """Create the theory content widget."""
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        
+        self.theory_content = QLabel()
+        self.theory_content.setObjectName("theoryContent")
+        self.theory_content.setWordWrap(True)
+        self.theory_content.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.theory_content.setTextFormat(Qt.PlainText)
+        self.theory_content.setStyleSheet("""
+            QLabel {
+                font-size: 14px;
+                line-height: 1.6;
+                padding: 20px;
+                background-color: #ffffff;
+                border-radius: 8px;
+            }
+        """)
+        
+        scroll.setWidget(self.theory_content)
+        self.content_stack.addWidget(scroll)
+
+    def _create_quiz_widget(self) -> None:
+        """Create the quiz content widget."""
+        quiz_frame = QFrame()
+        quiz_layout = QVBoxLayout(quiz_frame)
+        quiz_layout.setContentsMargins(20, 20, 20, 20)
+        quiz_layout.setSpacing(20)
+
+        # Question label
+        self.quiz_question = QLabel()
+        self.quiz_question.setObjectName("quizQuestion")
+        self.quiz_question.setWordWrap(True)
+        self.quiz_question.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                font-weight: bold;
+                color: #2c3e50;
+                padding: 15px;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+            }
+        """)
+        quiz_layout.addWidget(self.quiz_question)
+
+        # Answer options frame
+        self.quiz_options_frame = QFrame()
+        self.quiz_options_layout = QVBoxLayout(self.quiz_options_frame)
+        self.quiz_options_layout.setSpacing(10)
+        self.quiz_button_group = QButtonGroup(self)
+        quiz_layout.addWidget(self.quiz_options_frame)
+
+        # User answer input (alternative)
+        self.quiz_answer_label = QLabel("Votre réponse:")
+        self.quiz_answer_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        quiz_layout.addWidget(self.quiz_answer_label)
+
+        self.quiz_answer_input = QTextEdit()
+        self.quiz_answer_input.setObjectName("quizAnswerInput")
+        self.quiz_answer_input.setFixedHeight(60)
+        self.quiz_answer_input.setPlaceholderText("Entrez votre réponse ici...")
+        quiz_layout.addWidget(self.quiz_answer_input)
+
+        quiz_layout.addStretch()
+        self.content_stack.addWidget(quiz_frame)
+
+    def _create_typing_widget(self) -> None:
+        """Create the typing practice widget."""
+        typing_frame = QFrame()
+        typing_layout = QVBoxLayout(typing_frame)
+        typing_layout.setContentsMargins(20, 20, 20, 20)
+        typing_layout.setSpacing(20)
+
+        # Instructions
+        typing_instructions = QLabel("Recopiez le code ci-dessous exactement comme affiché:")
+        typing_instructions.setStyleSheet("font-size: 14px; color: #7f8c8d;")
+        typing_layout.addWidget(typing_instructions)
+
+        # Target text to type
+        self.typing_target = QLabel()
+        self.typing_target.setObjectName("typingTarget")
+        self.typing_target.setWordWrap(True)
+        self.typing_target.setStyleSheet("""
+            QLabel {
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 16px;
+                padding: 20px;
+                background-color: #2c3e50;
+                color: #ecf0f1;
+                border-radius: 8px;
+            }
+        """)
+        typing_layout.addWidget(self.typing_target)
+
+        # User typing area
+        typing_label = QLabel("Votre saisie:")
+        typing_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        typing_layout.addWidget(typing_label)
+
+        self.typing_input = QTextEdit()
+        self.typing_input.setObjectName("typingInput")
+        self.typing_input.setPlaceholderText("Commencez à taper ici...")
+        self.typing_input.setStyleSheet("""
+            QTextEdit {
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 14px;
+                padding: 15px;
+                border: 2px solid #bdc3c7;
+                border-radius: 8px;
+            }
+            QTextEdit:focus {
+                border-color: #3c78d8;
+            }
+        """)
+        typing_layout.addWidget(self.typing_input)
+
+        typing_layout.addStretch()
+        self.content_stack.addWidget(typing_frame)
+
+    def _create_exercise_widget(self) -> None:
+        """Create the exercise widget."""
+        exercise_frame = QFrame()
+        exercise_layout = QVBoxLayout(exercise_frame)
+        exercise_layout.setContentsMargins(20, 20, 20, 20)
+        exercise_layout.setSpacing(20)
+
+        # Exercise prompt
+        self.exercise_prompt = QLabel()
+        self.exercise_prompt.setObjectName("exercisePrompt")
+        self.exercise_prompt.setWordWrap(True)
+        self.exercise_prompt.setStyleSheet("""
+            QLabel {
+                font-size: 15px;
+                padding: 20px;
+                background-color: #e8f4f8;
+                border-left: 4px solid #3c78d8;
+                border-radius: 4px;
+            }
+        """)
+        exercise_layout.addWidget(self.exercise_prompt)
+
+        # Code editor area
+        code_label = QLabel("Votre code:")
+        code_label.setStyleSheet("font-weight: bold;")
+        exercise_layout.addWidget(code_label)
+
+        self.exercise_input = QTextEdit()
+        self.exercise_input.setObjectName("exerciseInput")
+        self.exercise_input.setPlaceholderText("# Écrivez votre code Python ici...")
+        self.exercise_input.setStyleSheet("""
+            QTextEdit {
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 14px;
+                padding: 15px;
+                background-color: #1e1e1e;
+                color: #d4d4d4;
+                border-radius: 8px;
+            }
+        """)
+        exercise_layout.addWidget(self.exercise_input)
+
+        # Hint area (hidden solution)
+        self.exercise_hint_btn = QPushButton("💡 Voir un indice")
+        self.exercise_hint_btn.setObjectName("secondaryButton")
+        self.exercise_hint_btn.clicked.connect(self._toggle_hint)
+        exercise_layout.addWidget(self.exercise_hint_btn)
+
+        self.exercise_solution = QLabel()
+        self.exercise_solution.setObjectName("exerciseSolution")
+        self.exercise_solution.setWordWrap(True)
+        self.exercise_solution.setVisible(False)
+        self.exercise_solution.setStyleSheet("""
+            QLabel {
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 13px;
+                padding: 15px;
+                background-color: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 8px;
+            }
+        """)
+        exercise_layout.addWidget(self.exercise_solution)
+
+        exercise_layout.addStretch()
+        self.content_stack.addWidget(exercise_frame)
+
+    def _toggle_hint(self) -> None:
+        """Toggle the visibility of the solution hint."""
+        is_visible = self.exercise_solution.isVisible()
+        self.exercise_solution.setVisible(not is_visible)
+        if is_visible:
+            self.exercise_hint_btn.setText("💡 Voir un indice")
+        else:
+            self.exercise_hint_btn.setText("🙈 Masquer l'indice")
 
     # ------------------------------------------------------------------
     # Task loading and selection
@@ -193,36 +394,77 @@ class TasksView(QWidget):
         self.current_task_index = row
         task = self.tasks[row]
 
-        self.task_title.setText(task["name"])
-        self.task_description.setText(task["description"])
-
-        # Show appropriate content based on task type
-        task_type = task["task_type"]
-
-        if task_type == "theory":
-            self.content_stack.setCurrentIndex(0)
-            self.theory_content.setHtml(self._get_theory_content(task))
-            self.validate_btn.setText("Marquer comme lu")
-        else:
-            self.content_stack.setCurrentIndex(1)
-            self.validate_btn.setText("Commencer")
+        # Load full task content from controller
+        task_id = task["id"]
+        self.current_task_data = self.controller.load_task_content(task_id)
+        
+        # Display the task content
+        self.display_task_content(self.current_task_data)
 
         # Update next button state
         self.next_btn.setEnabled(row < len(self.tasks) - 1)
 
-    def _get_theory_content(self, task: dict) -> str:
-        """Get HTML content for theory task."""
-        # Placeholder theory content based on task name
-        return f"""
-        <h2>{task['name']}</h2>
-        <p>{task['description']}</p>
-        <br>
-        <p>Contenu théorique à venir...</p>
-        <br>
-        <p style="color: #7f8c8d;">
-            Ce contenu sera chargé depuis la base de données.
-        </p>
-        """
+        # Emit task_selected signal
+        self.task_selected.emit(task_id)
+
+    def display_task_content(self, task_data: dict) -> None:
+        """Display task content in the appropriate widget based on task type."""
+        if not task_data:
+            return
+
+        task_type = task_data.get("type", "theory")
+        name = task_data.get("name", "")
+        description = task_data.get("description", "")
+
+        # Update header
+        self.task_title.setText(name)
+        self.task_description.setText(description)
+
+        # Display content based on type
+        if task_type == "theory":
+            self._display_theory(task_data)
+        elif task_type == "quiz":
+            self._display_quiz(task_data)
+        elif task_type == "typing":
+            self._display_typing(task_data)
+        elif task_type == "exercise":
+            self._display_exercise(task_data)
+
+    def _display_theory(self, task_data: dict) -> None:
+        """Display theory content."""
+        content = task_data.get("content", "Contenu non disponible.")
+        self.theory_content.setText(content)
+        self.content_stack.setCurrentIndex(0)
+        self.validate_btn.setText("Marquer comme lu")
+
+    def _display_quiz(self, task_data: dict) -> None:
+        """Display quiz content."""
+        question = task_data.get("question", "Question non disponible.")
+        self.quiz_question.setText(question)
+        self.quiz_answer_input.clear()
+        self.content_stack.setCurrentIndex(1)
+        self.validate_btn.setText("Vérifier")
+
+    def _display_typing(self, task_data: dict) -> None:
+        """Display typing content."""
+        text = task_data.get("text", "Texte non disponible.")
+        self.typing_target.setText(text)
+        self.typing_input.clear()
+        self.content_stack.setCurrentIndex(2)
+        self.validate_btn.setText("Vérifier")
+
+    def _display_exercise(self, task_data: dict) -> None:
+        """Display exercise content."""
+        prompt = task_data.get("prompt", "Exercice non disponible.")
+        solution = task_data.get("solution", "")
+        
+        self.exercise_prompt.setText(prompt)
+        self.exercise_solution.setText(f"Solution:\n{solution}")
+        self.exercise_solution.setVisible(False)
+        self.exercise_hint_btn.setText("💡 Voir un indice")
+        self.exercise_input.clear()
+        self.content_stack.setCurrentIndex(3)
+        self.validate_btn.setText("Soumettre")
 
     # ------------------------------------------------------------------
     # Signal emitters and handlers
@@ -235,20 +477,17 @@ class TasksView(QWidget):
         task = self.tasks[self.current_task_index]
         task_type = task["task_type"]
 
-        # For theory, mark as completed
-        if task_type == "theory":
-            self.controller.mark_task_completed(task["id"])
-            self.load_tasks(self.current_lesson_id)  # Refresh
-            return
-
-        # For other types, navigate to specific view
-        task_id = task["id"]
-        if task_type == "quiz":
-            self.navigate_to_quiz.emit(task_id)
-        elif task_type == "typing":
-            self.navigate_to_typing.emit(task_id)
-        elif task_type == "exercise":
-            self.navigate_to_exercise.emit(task_id)
+        # Mark task as completed (no validation logic yet)
+        self.controller.mark_task_completed(task["id"])
+        
+        # Refresh task list to update status
+        self.load_tasks(self.current_lesson_id, self.sidebar_title.text())
+        
+        # Reselect the current task (or next if available)
+        if self.current_task_index < len(self.tasks) - 1:
+            self.task_list.setCurrentRow(self.current_task_index + 1)
+        else:
+            self.task_list.setCurrentRow(self.current_task_index)
 
     def _on_next(self):
         """Handle next button click."""

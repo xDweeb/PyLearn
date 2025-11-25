@@ -67,7 +67,7 @@ class TaskController:
         cursor = conn.cursor()
 
         cursor.execute(
-            "SELECT id, lesson_id, name, task_type, description FROM tasks WHERE id = ?",
+            "SELECT id, lesson_id, name, task_type, description, content FROM tasks WHERE id = ?",
             (task_id,)
         )
         row = cursor.fetchone()
@@ -79,7 +79,8 @@ class TaskController:
                 "lesson_id": row[1],
                 "name": row[2],
                 "task_type": row[3] or "theory",
-                "description": row[4] or ""
+                "description": row[4] or "",
+                "content": row[5] or ""
             }
         return None
 
@@ -123,53 +124,136 @@ class TaskController:
         conn.commit()
         conn.close()
 
-    def get_task_content(self, task_id: int) -> Dict:
+    # ------------------------------------------------------------------
+    # Content Loading Methods
+    # ------------------------------------------------------------------
+
+    def load_task_content(self, task_id: int) -> Dict:
         """
-        Get the content for a specific task based on its type.
+        Load full content for a specific task based on its type.
 
         Returns:
-            Dict with task content (varies by type)
+            Dict with structured content:
+            {
+                "type": "theory" | "quiz" | "typing" | "exercise",
+                "task_id": int,
+                "lesson_id": int,
+                "name": str,
+                "description": str,
+                "content": str (for theory),
+                "question": str (for quiz),
+                "answer": str (for quiz),
+                "text": str (for typing),
+                "prompt": str (for exercise),
+                "solution": str (for exercise)
+            }
         """
         task = self.get_task_by_id(task_id)
         if not task:
             return {}
 
-        conn = self.db.get_connection()
-        cursor = conn.cursor()
-        content = {"task": task}
-
         task_type = task["task_type"]
         lesson_id = task["lesson_id"]
 
-        if task_type == "quiz":
-            cursor.execute(
-                "SELECT id, question, answer FROM quiz WHERE lesson_id = ?",
-                (lesson_id,)
-            )
-            rows = cursor.fetchall()
-            content["questions"] = [
-                {"id": r[0], "question": r[1], "answer": r[2]} for r in rows
-            ]
+        result = {
+            "type": task_type,
+            "task_id": task["id"],
+            "lesson_id": lesson_id,
+            "name": task["name"],
+            "description": task["description"]
+        }
 
+        if task_type == "theory":
+            result["content"] = task.get("content", "")
+        elif task_type == "quiz":
+            quiz_data = self.load_quiz(lesson_id)
+            result["question"] = quiz_data.get("question", "")
+            result["answer"] = quiz_data.get("answer", "")
         elif task_type == "typing":
-            cursor.execute(
-                "SELECT id, text FROM typing WHERE lesson_id = ?",
-                (lesson_id,)
-            )
-            rows = cursor.fetchall()
-            content["texts"] = [
-                {"id": r[0], "text": r[1]} for r in rows
-            ]
-
+            typing_data = self.load_typing(lesson_id)
+            result["text"] = typing_data.get("text", "")
         elif task_type == "exercise":
-            cursor.execute(
-                "SELECT id, prompt, solution FROM exercise WHERE lesson_id = ?",
-                (lesson_id,)
-            )
-            rows = cursor.fetchall()
-            content["exercises"] = [
-                {"id": r[0], "prompt": r[1], "solution": r[2]} for r in rows
-            ]
+            exercise_data = self.load_exercise(lesson_id)
+            result["prompt"] = exercise_data.get("prompt", "")
+            result["solution"] = exercise_data.get("solution", "")
 
+        return result
+
+    def load_quiz(self, lesson_id: int) -> Dict:
+        """
+        Load quiz content for a lesson.
+
+        Returns:
+            Dict with keys: question, answer
+        """
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT question, answer FROM quiz WHERE lesson_id = ? LIMIT 1",
+            (lesson_id,)
+        )
+        row = cursor.fetchone()
         conn.close()
-        return content
+
+        if row:
+            return {
+                "question": row[0] or "",
+                "answer": row[1] or ""
+            }
+        return {"question": "", "answer": ""}
+
+    def load_typing(self, lesson_id: int) -> Dict:
+        """
+        Load typing content for a lesson.
+
+        Returns:
+            Dict with key: text
+        """
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT text FROM typing WHERE lesson_id = ? LIMIT 1",
+            (lesson_id,)
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return {"text": row[0] or ""}
+        return {"text": ""}
+
+    def load_exercise(self, lesson_id: int) -> Dict:
+        """
+        Load exercise content for a lesson.
+
+        Returns:
+            Dict with keys: prompt, solution
+        """
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT prompt, solution FROM exercise WHERE lesson_id = ? LIMIT 1",
+            (lesson_id,)
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        if row:
+            return {
+                "prompt": row[0] or "",
+                "solution": row[1] or ""
+            }
+        return {"prompt": "", "solution": ""}
+
+    def get_task_content(self, task_id: int) -> Dict:
+        """
+        Legacy method - use load_task_content() instead.
+        Get the content for a specific task based on its type.
+
+        Returns:
+            Dict with task content (varies by type)
+        """
+        return self.load_task_content(task_id)
