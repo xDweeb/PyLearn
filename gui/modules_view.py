@@ -1,164 +1,138 @@
 # modules_view.py
-# Modules screen view for PyLearn Desktop
-# Presents a list of learning modules as styled cards.
+# View for displaying modules in PyLearn Desktop
 
-from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QFrame,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QScrollArea, QFrame, QGridLayout
 )
+from PySide6.QtCore import Signal, Qt
+from controllers.module_controller import ModuleController
 
 
 class ModulesView(QWidget):
-    """Modules screen view with a list of module cards.
-
-    Signals:
-        navigate_to_lessons(int): emitted when the user opens a module,
-                                  passing the module_id.
-        navigate_back(): emitted when the user clicks the back button.
-    """
+    """View for displaying all modules."""
 
     # Navigation signals
-    navigate_to_lessons = Signal(int)
     navigate_back = Signal()
+    navigate_to_lessons = Signal(int)  # Emits module_id
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.controller = ModuleController()
+        self.modules = []
         self._setup_ui()
 
-    # ------------------------------------------------------------------
-    # UI construction
-    # ------------------------------------------------------------------
-    def _setup_ui(self) -> None:
-        """Configure the layout and widgets for the modules page."""
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(24)
+    def _setup_ui(self):
+        """Set up the user interface."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
 
-        # Top bar with back button
-        top_layout = QHBoxLayout()
-        back_button = QPushButton("← Retour")
-        back_button.setObjectName("backButton")
-        back_button.setCursor(Qt.PointingHandCursor)
-        back_button.clicked.connect(self._on_back_clicked)
-        top_layout.addWidget(back_button)
-        top_layout.addStretch()
+        # Header with back button
+        header = QHBoxLayout()
+        
+        back_btn = QPushButton("← Retour")
+        back_btn.setObjectName("secondaryButton")
+        back_btn.setFixedWidth(120)
+        back_btn.clicked.connect(self.navigate_back.emit)
+        header.addWidget(back_btn)
+        
+        header.addStretch()
+        layout.addLayout(header)
 
-        main_layout.addLayout(top_layout)
+        # Title
+        title = QLabel("Modules de formation")
+        title.setObjectName("viewTitle")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
 
-        # Header section
-        header_layout = QVBoxLayout()
-        header_layout.setSpacing(8)
+        subtitle = QLabel("Choisissez un module pour commencer votre apprentissage")
+        subtitle.setObjectName("viewSubtitle")
+        subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(subtitle)
 
-        title_label = QLabel("Modules d'apprentissage")
-        title_label.setObjectName("titleLabel")
-        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        # Scrollable area for modules
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        subtitle_label = QLabel("Choisissez un module pour commencer")
-        subtitle_label.setObjectName("subtitleLabel")
-        subtitle_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        scroll_content = QWidget()
+        self.grid_layout = QGridLayout(scroll_content)
+        self.grid_layout.setSpacing(20)
+        self.grid_layout.setContentsMargins(10, 10, 10, 10)
 
-        header_layout.addWidget(title_label)
-        header_layout.addWidget(subtitle_label)
+        scroll.setWidget(scroll_content)
+        layout.addWidget(scroll)
 
-        # Vertical list of module cards
-        modules_list_layout = QVBoxLayout()
-        modules_list_layout.setSpacing(12)
+    def load_modules(self):
+        """Load modules from database and refresh the view."""
+        # Clear existing cards
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
-        # Module 1: Python Start – 0% – Unlocked (with "Ouvrir" button)
-        module1_card = self._create_module_card(
-            module_id=1,
-            title="Module 1: Python Start",
-            status_text="0%",
-            locked=False,
-        )
-        modules_list_layout.addWidget(module1_card)
+        # Load modules from controller
+        self.modules = self.controller.load_modules()
 
-        # Module 2: Variables – Verrouillé – Locked icon
-        module2_card = self._create_module_card(
-            module_id=2,
-            title="Module 2: Variables",
-            status_text="Verrouillé",
-            locked=True,
-        )
-        modules_list_layout.addWidget(module2_card)
+        # Create module cards
+        for idx, module in enumerate(self.modules):
+            card = self._create_module_card(module)
+            row = idx // 3
+            col = idx % 3
+            self.grid_layout.addWidget(card, row, col)
 
-        # Module 3: Strings – Verrouillé – Locked icon
-        module3_card = self._create_module_card(
-            module_id=3,
-            title="Module 3: Strings",
-            status_text="Verrouillé",
-            locked=True,
-        )
-        modules_list_layout.addWidget(module3_card)
+        # Add stretch at the end
+        self.grid_layout.setRowStretch(len(self.modules) // 3 + 1, 1)
 
-        main_layout.addLayout(header_layout)
-        main_layout.addLayout(modules_list_layout)
-        main_layout.addStretch()
-
-        self.setLayout(main_layout)
-
-    def _create_module_card(
-        self,
-        module_id: int,
-        title: str,
-        status_text: str,
-        locked: bool,
-    ) -> QFrame:
-        """Create a styled module card."""
+    def _create_module_card(self, module: dict) -> QFrame:
+        """Create a card widget for a module."""
         card = QFrame()
         card.setObjectName("moduleCard")
-        card.setFrameShape(QFrame.StyledPanel)
+        card.setFixedSize(280, 200)
+        
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(20, 20, 20, 20)
+        card_layout.setSpacing(10)
 
-        layout = QHBoxLayout(card)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(12)
-
-        # Left: lock icon or empty placeholder
-        if locked:
-            lock_label = QLabel("🔒")
-            lock_label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(lock_label)
+        # Lock icon or module number
+        if module["is_unlocked"]:
+            icon_text = f"📘"
         else:
-            lock_label = QLabel("")
-            layout.addWidget(lock_label)
+            icon_text = "🔒"
+        
+        icon_label = QLabel(icon_text)
+        icon_label.setStyleSheet("font-size: 32px;")
+        icon_label.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(icon_label)
 
-        # Middle: title and status stacked vertically
-        text_container = QWidget()
-        text_layout = QVBoxLayout(text_container)
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(2)
+        # Module name
+        name_label = QLabel(module["name"])
+        name_label.setObjectName("cardTitle")
+        name_label.setAlignment(Qt.AlignCenter)
+        name_label.setWordWrap(True)
+        card_layout.addWidget(name_label)
 
-        title_label = QLabel(title)
-        status_label = QLabel(status_text)
+        # Module description
+        desc_label = QLabel(module["description"])
+        desc_label.setObjectName("cardDescription")
+        desc_label.setAlignment(Qt.AlignCenter)
+        desc_label.setWordWrap(True)
+        card_layout.addWidget(desc_label)
 
-        text_layout.addWidget(title_label)
-        text_layout.addWidget(status_label)
+        card_layout.addStretch()
 
-        layout.addWidget(text_container, stretch=1)
-
-        # Right: "Ouvrir" button for unlocked modules only
-        if not locked:
-            open_button = QPushButton("Ouvrir")
-            open_button.setObjectName("openButton")
-            open_button.clicked.connect(
-                lambda _checked=False, mid=module_id: self._on_open_module(mid)
-            )
-            layout.addWidget(open_button)
+        # Button
+        if module["is_unlocked"]:
+            btn = QPushButton("Commencer")
+            btn.setObjectName("primaryButton")
+            btn.clicked.connect(lambda checked, m_id=module["id"]: self.navigate_to_lessons.emit(m_id))
+        else:
+            btn = QPushButton("Verrouillé")
+            btn.setObjectName("secondaryButton")
+            btn.setEnabled(False)
+        
+        card_layout.addWidget(btn)
 
         return card
-
-    # ------------------------------------------------------------------
-    # Signal emitters
-    # ------------------------------------------------------------------
-    def _on_open_module(self, module_id: int) -> None:
-        """Emit navigation signal with the selected module id."""
-        self.navigate_to_lessons.emit(module_id)
-
-    def _on_back_clicked(self) -> None:
-        """Emit signal to navigate back to home."""
-        self.navigate_back.emit()

@@ -6,6 +6,8 @@ import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from database.db import Database
+from controllers.module_controller import ModuleController
+from controllers.lesson_controller import LessonController
 from navigation_manager import NavigationManager
 from gui.home_view import HomeView
 from gui.modules_view import ModulesView
@@ -24,9 +26,15 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PyLearn Desktop")
         self.setGeometry(100, 100, 1024, 768)
 
-        # Placeholder IDs for back navigation (will be updated by controllers later)
-        self.last_module_id = 1
-        self.last_lesson_id = 1
+        # Controllers for fetching data
+        self.module_controller = ModuleController()
+        self.lesson_controller = LessonController()
+
+        # Store current context for navigation
+        self.current_module_id = None
+        self.current_module_name = ""
+        self.current_lesson_id = None
+        self.current_lesson_name = ""
 
         # Stacked widget for navigation between views
         self.stacked_widget = QStackedWidget()
@@ -78,7 +86,7 @@ class MainWindow(QMainWindow):
         """Connect navigation signals from views to navigation actions."""
         # Forward navigation signals
         self.home_view.navigate_to_modules.connect(
-            lambda: self.navigation.navigate("modules")
+            self._on_navigate_to_modules
         )
 
         self.modules_view.navigate_to_lessons.connect(
@@ -90,11 +98,15 @@ class MainWindow(QMainWindow):
         )
 
         self.tasks_view.navigate_to_quiz.connect(
-            lambda: self.navigation.navigate("quiz")
+            self._on_navigate_to_quiz
+        )
+
+        self.tasks_view.navigate_to_typing.connect(
+            self._on_navigate_to_typing
         )
 
         self.tasks_view.navigate_to_exercise.connect(
-            lambda: self.navigation.navigate("exercise")
+            self._on_navigate_to_exercise
         )
 
         # Back navigation signals
@@ -103,33 +115,82 @@ class MainWindow(QMainWindow):
         )
 
         self.lessons_view.navigate_back.connect(
-            lambda: self.navigation.navigate("modules")
+            self._on_back_to_modules
         )
 
         self.tasks_view.navigate_back.connect(
-            lambda: self.navigation.navigate("lessons")
+            self._on_back_to_lessons
         )
 
         self.quiz_view.navigate_back.connect(
-            lambda: self.navigation.navigate("tasks")
+            self._on_back_to_tasks
         )
 
         self.typing_view.navigate_back.connect(
-            lambda: self.navigation.navigate("tasks")
+            self._on_back_to_tasks
         )
 
         self.exercise_view.navigate_back.connect(
-            lambda: self.navigation.navigate("tasks")
+            self._on_back_to_tasks
         )
 
+    def _on_navigate_to_modules(self) -> None:
+        """Handle navigation to modules view."""
+        self.modules_view.load_modules()
+        self.navigation.navigate("modules")
+
     def _on_navigate_to_lessons(self, module_id: int) -> None:
-        """Handle navigation to lessons, storing the module_id."""
-        self.last_module_id = module_id
+        """Handle navigation to lessons, storing the module context."""
+        self.current_module_id = module_id
+        
+        # Get module name for display
+        module = self.module_controller.get_module_by_id(module_id)
+        self.current_module_name = module["name"] if module else ""
+        
+        self.lessons_view.load_lessons(module_id, self.current_module_name)
         self.navigation.navigate("lessons")
 
     def _on_navigate_to_tasks(self, lesson_id: int) -> None:
-        """Handle navigation to tasks, storing the lesson_id."""
-        self.last_lesson_id = lesson_id
+        """Handle navigation to tasks, storing the lesson context."""
+        self.current_lesson_id = lesson_id
+        
+        # Get lesson name for display
+        lesson = self.lesson_controller.get_lesson_by_id(lesson_id)
+        self.current_lesson_name = lesson["name"] if lesson else ""
+        
+        self.tasks_view.load_tasks(lesson_id, self.current_lesson_name)
+        self.navigation.navigate("tasks")
+
+    def _on_navigate_to_quiz(self, task_id: int) -> None:
+        """Handle navigation to quiz view."""
+        # TODO: Load quiz content based on task_id
+        self.navigation.navigate("quiz")
+
+    def _on_navigate_to_typing(self, task_id: int) -> None:
+        """Handle navigation to typing view."""
+        # TODO: Load typing content based on task_id
+        self.navigation.navigate("typing")
+
+    def _on_navigate_to_exercise(self, task_id: int) -> None:
+        """Handle navigation to exercise view."""
+        # TODO: Load exercise content based on task_id
+        self.navigation.navigate("exercise")
+
+    def _on_back_to_modules(self) -> None:
+        """Handle back navigation to modules view (reload data)."""
+        self.modules_view.load_modules()
+        self.navigation.navigate("modules")
+
+    def _on_back_to_lessons(self) -> None:
+        """Handle back navigation to lessons view (reload data)."""
+        if self.current_module_id:
+            self.lessons_view.load_lessons(self.current_module_id, self.current_module_name)
+        self.navigation.navigate("lessons")
+
+    def _on_back_to_tasks(self) -> None:
+        """Handle back navigation to tasks view (reload data)."""
+        if self.current_lesson_id:
+            self.tasks_view.load_tasks(self.current_lesson_id, self.current_lesson_name)
         self.navigation.navigate("tasks")
 
     def navigate_to(self, view_name: str) -> None:

@@ -9,8 +9,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
     QFrame,
 )
+from controllers.lesson_controller import LessonController
 
 
 class LessonsView(QWidget):
@@ -28,6 +30,9 @@ class LessonsView(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.controller = LessonController()
+        self.lessons = []
+        self.current_module_id = None
         # Placeholder module name; can be updated later by controllers
         self._module_name = "Module 1 : Python Start"
         self._setup_ui()
@@ -37,131 +42,147 @@ class LessonsView(QWidget):
     # ------------------------------------------------------------------
     def _setup_ui(self) -> None:
         """Configure the layout and widgets for the lessons page."""
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(40, 40, 40, 40)
-        main_layout.setSpacing(24)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(20)
 
-        # Top bar with back button
-        top_layout = QHBoxLayout()
-        back_button = QPushButton("← Retour")
-        back_button.setObjectName("backButton")
-        back_button.setCursor(Qt.PointingHandCursor)
-        back_button.clicked.connect(self._on_back_clicked)
-        top_layout.addWidget(back_button)
-        top_layout.addStretch()
+        # Header with back button
+        header = QHBoxLayout()
 
-        main_layout.addLayout(top_layout)
+        back_btn = QPushButton("← Retour")
+        back_btn.setObjectName("secondaryButton")
+        back_btn.setFixedWidth(120)
+        back_btn.clicked.connect(self.navigate_back.emit)
+        header.addWidget(back_btn)
 
-        # Header section: title + subtitle with module name placeholder
-        header_layout = QVBoxLayout()
-        header_layout.setSpacing(8)
+        header.addStretch()
+        layout.addLayout(header)
 
-        title_label = QLabel("Leçons du module")
-        title_label.setObjectName("titleLabel")
-        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        # Title (will be updated with module name)
+        self.title = QLabel("Leçons du module")
+        self.title.setObjectName("viewTitle")
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
 
-        subtitle_label = QLabel(f"{self._module_name}")
-        subtitle_label.setObjectName("subtitleLabel")
-        subtitle_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-
-        header_layout.addWidget(title_label)
-        header_layout.addWidget(subtitle_label)
-
-        # Vertical list of lesson cards
-        lessons_list_layout = QVBoxLayout()
-        lessons_list_layout.setSpacing(12)
-
-        # Hard-coded placeholders for lessons of Module 1
-        lesson1_card = self._create_lesson_card(
-            lesson_id=1,
-            title="Leçon 1 : Introduction à Python",
-            status="completed",
+        self.subtitle = QLabel(
+            "Progressez à travers les leçons pour maîtriser ce module"
         )
-        lessons_list_layout.addWidget(lesson1_card)
+        self.subtitle.setObjectName("viewSubtitle")
+        self.subtitle.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.subtitle)
 
-        lesson2_card = self._create_lesson_card(
-            lesson_id=2,
-            title="Leçon 2 : La fonction print()",
-            status="in_progress",
-        )
-        lessons_list_layout.addWidget(lesson2_card)
+        # Scrollable area for lessons
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        lesson3_card = self._create_lesson_card(
-            lesson_id=3,
-            title="Leçon 3 : La fonction input()",
-            status="locked",
-        )
-        lessons_list_layout.addWidget(lesson3_card)
+        scroll_content = QWidget()
+        self.lessons_layout = QVBoxLayout(scroll_content)
+        self.lessons_layout.setSpacing(15)
+        self.lessons_layout.setContentsMargins(50, 10, 50, 10)
 
-        lesson4_card = self._create_lesson_card(
-            lesson_id=4,
-            title="Leçon 4 : Commentaires en Python",
-            status="locked",
-        )
-        lessons_list_layout.addWidget(lesson4_card)
+        scroll.setWidget(scroll_content)
+        layout.addWidget(scroll)
 
-        main_layout.addLayout(header_layout)
-        main_layout.addLayout(lessons_list_layout)
-        main_layout.addStretch()
+        self.setLayout(layout)
 
-        self.setLayout(main_layout)
+    def load_lessons(self, module_id: int, module_name: str = ""):
+        """Load lessons for a specific module."""
+        self.current_module_id = module_id
 
-    def _create_lesson_card(
-        self,
-        lesson_id: int,
-        title: str,
-        status: str,
-    ) -> QFrame:
-        """Create a styled lesson card."""
+        # Update title
+        if module_name:
+            self.title.setText(f"Leçons - {module_name}")
+        else:
+            self.title.setText(f"Leçons du module {module_id}")
+
+        # Clear existing lesson cards
+        while self.lessons_layout.count():
+            item = self.lessons_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Load lessons from controller
+        self.lessons = self.controller.load_lessons(module_id)
+
+        # Create lesson cards
+        for idx, lesson in enumerate(self.lessons):
+            card = self._create_lesson_card(lesson, idx + 1)
+            self.lessons_layout.addWidget(card)
+
+        # Add stretch at the end
+        self.lessons_layout.addStretch()
+
+    def _create_lesson_card(self, lesson: dict, number: int) -> QFrame:
+        """Create a card widget for a lesson."""
         card = QFrame()
         card.setObjectName("lessonCard")
-        card.setFrameShape(QFrame.StyledPanel)
+        card.setFixedHeight(80)
 
-        layout = QHBoxLayout(card)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(12)
+        card_layout = QHBoxLayout(card)
+        card_layout.setContentsMargins(20, 15, 20, 15)
+        card_layout.setSpacing(15)
 
-        # Determine icon and status text based on status
+        # Status icon
+        status = lesson["status"]
         if status == "completed":
-            icon = "✔"
-            status_text = "Terminée"
-            locked = False
+            status_icon = "✔"
+            status_color = "#27ae60"
         elif status == "in_progress":
-            icon = "●"
-            status_text = "En cours"
-            locked = False
-        else:  # status == "locked"
-            icon = "🔒"
-            status_text = "Verrouillée"
-            locked = True
+            status_icon = "●"
+            status_color = "#3c78d8"
+        else:  # locked
+            status_icon = "🔒"
+            status_color = "#7f8c8d"
 
-        # Left: status icon
-        icon_label = QLabel(icon)
-        icon_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(icon_label)
+        icon_label = QLabel(status_icon)
+        icon_label.setStyleSheet(f"font-size: 20px; color: {status_color};")
+        icon_label.setFixedWidth(30)
+        card_layout.addWidget(icon_label)
 
-        # Middle: title and status text stacked vertically
-        text_container = QWidget()
-        text_layout = QVBoxLayout(text_container)
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(2)
+        # Lesson number
+        num_label = QLabel(f"{number}.")
+        num_label.setStyleSheet(
+            "font-size: 16px; font-weight: bold; color: #2c3e50;"
+        )
+        num_label.setFixedWidth(30)
+        card_layout.addWidget(num_label)
 
-        title_label = QLabel(title)
-        status_label = QLabel(status_text)
+        # Lesson info
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(2)
 
-        text_layout.addWidget(title_label)
-        text_layout.addWidget(status_label)
+        name_label = QLabel(lesson["name"])
+        name_label.setObjectName("lessonTitle")
+        info_layout.addWidget(name_label)
 
-        layout.addWidget(text_container, stretch=1)
+        desc_label = QLabel(lesson["description"])
+        desc_label.setObjectName("lessonDescription")
+        info_layout.addWidget(desc_label)
 
-        # Right: "Ouvrir" button for unlocked lessons only
-        if not locked:
-            open_button = QPushButton("Ouvrir")
-            open_button.setObjectName("openButton")
-            open_button.clicked.connect(
-                lambda _checked=False, lid=lesson_id: self._on_open_lesson(lid)
+        card_layout.addLayout(info_layout, 1)
+
+        # Action button
+        if status == "locked":
+            btn = QPushButton("Verrouillé")
+            btn.setObjectName("secondaryButton")
+            btn.setEnabled(False)
+        elif status == "completed":
+            btn = QPushButton("Réviser")
+            btn.setObjectName("secondaryButton")
+            btn.clicked.connect(
+                lambda checked, l_id=lesson["id"]: self.navigate_to_tasks.emit(l_id)
             )
-            layout.addWidget(open_button)
+        else:
+            btn = QPushButton("Continuer")
+            btn.setObjectName("primaryButton")
+            btn.clicked.connect(
+                lambda checked, l_id=lesson["id"]: self.navigate_to_tasks.emit(l_id)
+            )
+
+        btn.setFixedWidth(120)
+        card_layout.addWidget(btn)
 
         return card
 
