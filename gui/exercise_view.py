@@ -34,9 +34,7 @@ class ExerciseView(QWidget):
         # Top bar with back button
         top_layout = QHBoxLayout()
         back_button = QPushButton("← Retour")
-        back_button.setStyleSheet(
-            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
-        )
+        back_button.setObjectName("backButton")
         back_button.setCursor(Qt.PointingHandCursor)
         back_button.clicked.connect(self._on_back_clicked)
         top_layout.addWidget(back_button)
@@ -46,12 +44,12 @@ class ExerciseView(QWidget):
 
         # Page title
         title_label = QLabel("Exercice")
-        title_label.setStyleSheet("font-size: 24px; font-weight: 700;")
+        title_label.setObjectName("titleLabel")
         main_layout.addWidget(title_label)
 
         # Placeholder content
         content_label = QLabel("Exercice de code à venir...")
-        content_label.setStyleSheet("font-size: 14px; color: #555555;")
+        content_label.setObjectName("subtitleLabel")
         main_layout.addWidget(content_label)
 
         main_layout.addStretch()

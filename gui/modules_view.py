@@ -42,9 +42,7 @@ class ModulesView(QWidget):
         # Top bar with back button
         top_layout = QHBoxLayout()
         back_button = QPushButton("← Retour")
-        back_button.setStyleSheet(
-            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
-        )
+        back_button.setObjectName("backButton")
         back_button.setCursor(Qt.PointingHandCursor)
         back_button.clicked.connect(self._on_back_clicked)
         top_layout.addWidget(back_button)
@@ -57,12 +55,12 @@ class ModulesView(QWidget):
         header_layout.setSpacing(8)
 
         title_label = QLabel("Modules d'apprentissage")
+        title_label.setObjectName("titleLabel")
         title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        title_label.setStyleSheet("font-size: 24px; font-weight: 700;")
 
         subtitle_label = QLabel("Choisissez un module pour commencer")
+        subtitle_label.setObjectName("subtitleLabel")
         subtitle_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        subtitle_label.setStyleSheet("font-size: 14px; color: #555555;")
 
         header_layout.addWidget(title_label)
         header_layout.addWidget(subtitle_label)
@@ -115,16 +113,6 @@ class ModulesView(QWidget):
         card = QFrame()
         card.setObjectName("moduleCard")
         card.setFrameShape(QFrame.StyledPanel)
-        card.setStyleSheet(
-            "#moduleCard {"
-            "  background-color: #f5f5f5;"
-            "  border-radius: 8px;"
-            "  padding: 10px;"
-            "}"
-            "#moduleCard:hover {"
-            "  background-color: #ececec;"
-            "}"
-        )
 
         layout = QHBoxLayout(card)
         layout.setContentsMargins(12, 8, 12, 8)
@@ -146,10 +134,7 @@ class ModulesView(QWidget):
         text_layout.setSpacing(2)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 14px; font-weight: 500;")
-
         status_label = QLabel(status_text)
-        status_label.setStyleSheet("font-size: 12px; color: #777777;")
 
         text_layout.addWidget(title_label)
         text_layout.addWidget(status_label)
@@ -159,9 +144,7 @@ class ModulesView(QWidget):
         # Right: "Ouvrir" button for unlocked modules only
         if not locked:
             open_button = QPushButton("Ouvrir")
-            open_button.setStyleSheet(
-                "padding: 6px 14px; font-size: 13px; font-weight: 500;"
-            )
+            open_button.setObjectName("openButton")
             open_button.clicked.connect(
                 lambda _checked=False, mid=module_id: self._on_open_module(mid)
             )

@@ -1,6 +1,7 @@
 # main.py
 # Entry point for PyLearn Desktop application
 
+import os
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
@@ -144,6 +145,16 @@ if __name__ == "__main__":
 
     # Start Qt application
     app = QApplication(sys.argv)
+
+    # Load global stylesheet
+    style_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "assets", "styles", "style.qss"
+    )
+    if os.path.exists(style_path):
+        with open(style_path, "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

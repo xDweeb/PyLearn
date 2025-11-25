@@ -63,12 +63,6 @@ class TasksView(QWidget):
         sidebar = QFrame()
         sidebar.setObjectName("tasksSidebar")
         sidebar.setFixedWidth(220)
-        sidebar.setStyleSheet(
-            "#tasksSidebar {"
-            "  background-color: #f0f0f0;"
-            "  border-right: 1px solid #dcdcdc;"
-            "}"
-        )
 
         layout = QVBoxLayout(sidebar)
         layout.setContentsMargins(16, 16, 16, 24)
@@ -76,28 +70,25 @@ class TasksView(QWidget):
 
         # Back button at the top of sidebar
         back_button = QPushButton("← Retour")
-        back_button.setStyleSheet(
-            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
-        )
+        back_button.setObjectName("backButton")
         back_button.setCursor(Qt.PointingHandCursor)
         back_button.clicked.connect(self._on_back_clicked)
         layout.addWidget(back_button)
 
         # Sidebar header
         header_label = QLabel("Tâches de la leçon")
-        header_label.setStyleSheet("font-size: 16px; font-weight: 700;")
+        header_label.setObjectName("sectionTitle")
         layout.addWidget(header_label)
 
         # Lesson title (placeholder)
         lesson_label = QLabel(self._lesson_title)
-        lesson_label.setStyleSheet("font-size: 13px; color: #555555;")
+        lesson_label.setObjectName("subtitleLabel")
         lesson_label.setWordWrap(True)
         layout.addWidget(lesson_label)
 
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("color: #dcdcdc;")
         layout.addWidget(separator)
 
         # Task list (hard-coded placeholders with status icons)
@@ -139,19 +130,6 @@ class TasksView(QWidget):
 
         button = QPushButton(f"{icon}  {title}")
         button.setObjectName("taskItem")
-        button.setStyleSheet(
-            "#taskItem {"
-            "  text-align: left;"
-            "  padding: 10px 12px;"
-            "  font-size: 13px;"
-            "  background-color: transparent;"
-            "  border: none;"
-            "  border-radius: 6px;"
-            "}"
-            "#taskItem:hover {"
-            "  background-color: #e0e0e0;"
-            "}"
-        )
         button.setCursor(Qt.PointingHandCursor)
         button.clicked.connect(
             lambda _checked=False, tid=task_id: self._on_task_clicked(tid)
@@ -163,11 +141,6 @@ class TasksView(QWidget):
         """Create the right content area for displaying task content."""
         content = QFrame()
         content.setObjectName("tasksContent")
-        content.setStyleSheet(
-            "#tasksContent {"
-            "  background-color: #ffffff;"
-            "}"
-        )
 
         layout = QVBoxLayout(content)
         layout.setContentsMargins(32, 32, 32, 32)
@@ -176,12 +149,6 @@ class TasksView(QWidget):
         # Content header
         content_header = QLabel("Théorie")
         content_header.setObjectName("contentHeader")
-        content_header.setStyleSheet(
-            "#contentHeader {"
-            "  font-size: 20px;"
-            "  font-weight: 700;"
-            "}"
-        )
         layout.addWidget(content_header)
 
         # Instructions / theory placeholder
@@ -194,25 +161,15 @@ class TasksView(QWidget):
             "Cliquez sur 'Suivant' pour continuer."
         )
         instructions_label.setWordWrap(True)
-        instructions_label.setStyleSheet("font-size: 14px; color: #333333;")
         instructions_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         layout.addWidget(instructions_label)
 
         # Code editor placeholder (for coding tasks)
         code_editor_label = QLabel("Zone de code (pour les exercices)")
-        code_editor_label.setStyleSheet("font-size: 13px; color: #777777;")
         layout.addWidget(code_editor_label)
 
         self.code_editor = QTextEdit()
         self.code_editor.setPlaceholderText("# Écrivez votre code ici...")
-        self.code_editor.setStyleSheet(
-            "font-family: 'Consolas', 'Courier New', monospace;"
-            "font-size: 13px;"
-            "background-color: #f9f9f9;"
-            "border: 1px solid #dcdcdc;"
-            "border-radius: 6px;"
-            "padding: 8px;"
-        )
         self.code_editor.setMinimumHeight(120)
         layout.addWidget(self.code_editor)
 
@@ -224,28 +181,12 @@ class TasksView(QWidget):
         buttons_layout.addStretch()
 
         validate_button = QPushButton("Valider")
-        validate_button.setStyleSheet(
-            "padding: 10px 20px;"
-            "font-size: 14px;"
-            "font-weight: 500;"
-            "background-color: #4CAF50;"
-            "color: #ffffff;"
-            "border: none;"
-            "border-radius: 6px;"
-        )
+        validate_button.setObjectName("validateButton")
         validate_button.setCursor(Qt.PointingHandCursor)
         buttons_layout.addWidget(validate_button)
 
         next_button = QPushButton("Suivant")
-        next_button.setStyleSheet(
-            "padding: 10px 20px;"
-            "font-size: 14px;"
-            "font-weight: 500;"
-            "background-color: #2196F3;"
-            "color: #ffffff;"
-            "border: none;"
-            "border-radius: 6px;"
-        )
+        next_button.setObjectName("nextButton")
         next_button.setCursor(Qt.PointingHandCursor)
         buttons_layout.addWidget(next_button)
 

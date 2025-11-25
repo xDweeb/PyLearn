@@ -1,0 +1,265 @@
+/* style.qss */
+/* Global stylesheet for PyLearn Desktop */
+/* Clean, modern light theme */
+
+/* ========================================
+   GLOBAL WIDGET STYLING
+   ======================================== */
+
+QWidget {
+    background-color: #f3f3f3;
+    font-family: "Segoe UI", "Arial", sans-serif;
+    font-size: 13px;
+    color: #333333;
+}
+
+QMainWindow {
+    background-color: #f3f3f3;
+}
+
+/* ========================================
+   LABELS
+   ======================================== */
+
+QLabel {
+    background-color: transparent;
+    color: #333333;
+}
+
+QLabel#titleLabel {
+    font-size: 26px;
+    font-weight: 600;
+    color: #222222;
+}
+
+QLabel#subtitleLabel {
+    font-size: 16px;
+    font-weight: 400;
+    color: #555555;
+}
+
+QLabel#sectionTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333333;
+}
+
+QLabel#contentHeader {
+    font-size: 20px;
+    font-weight: 700;
+    color: #222222;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+
+/* Primary button (blue) */
+QPushButton {
+    background-color: #3c78d8;
+    color: #ffffff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #2d5bb8;
+}
+
+QPushButton:pressed {
+    background-color: #244a96;
+}
+
+/* Secondary button (grey) */
+QPushButton#secondaryButton {
+    background-color: #e0e0e0;
+    color: #333333;
+}
+
+QPushButton#secondaryButton:hover {
+    background-color: #c8c8c8;
+}
+
+QPushButton#secondaryButton:pressed {
+    background-color: #b0b0b0;
+}
+
+/* Back button (smaller, subtle) */
+QPushButton#backButton {
+    background-color: transparent;
+    color: #555555;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+}
+
+QPushButton#backButton:hover {
+    background-color: #e8e8e8;
+    color: #333333;
+}
+
+/* Validate button (green) */
+QPushButton#validateButton {
+    background-color: #4CAF50;
+    color: #ffffff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QPushButton#validateButton:hover {
+    background-color: #43a047;
+}
+
+/* Next button (blue) */
+QPushButton#nextButton {
+    background-color: #2196F3;
+    color: #ffffff;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QPushButton#nextButton:hover {
+    background-color: #1e88e5;
+}
+
+/* Open button (for cards) */
+QPushButton#openButton {
+    background-color: #3c78d8;
+    color: #ffffff;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+QPushButton#openButton:hover {
+    background-color: #2d5bb8;
+}
+
+/* Task item button (sidebar) */
+QPushButton#taskItem {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 13px;
+    background-color: transparent;
+    color: #333333;
+    border: none;
+    border-radius: 6px;
+}
+
+QPushButton#taskItem:hover {
+    background-color: #e0e0e0;
+}
+
+/* ========================================
+   QFRAME CARDS
+   ======================================== */
+
+QFrame#moduleCard,
+QFrame#lessonCard {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+QFrame#moduleCard:hover,
+QFrame#lessonCard:hover {
+    background-color: #fafafa;
+    border-color: #cccccc;
+}
+
+/* Sidebar frame */
+QFrame#tasksSidebar {
+    background-color: #f0f0f0;
+    border-right: 1px solid #dcdcdc;
+}
+
+/* Content area frame */
+QFrame#tasksContent {
+    background-color: #ffffff;
+}
+
+/* ========================================
+   TEXT EDIT (Code editor)
+   ======================================== */
+
+QTextEdit {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 13px;
+    background-color: #f9f9f9;
+    color: #333333;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 8px;
+}
+
+QTextEdit:focus {
+    border-color: #3c78d8;
+}
+
+/* ========================================
+   SCROLLBARS
+   ======================================== */
+
+QScrollBar:vertical {
+    background-color: #f3f3f3;
+    width: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #c0c0c0;
+    border-radius: 5px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #a0a0a0;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #f3f3f3;
+    height: 10px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #c0c0c0;
+    border-radius: 5px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #a0a0a0;
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ========================================
+   LINE SEPARATOR
+   ======================================== */
+
+QFrame[frameShape="4"] {  /* HLine */
+    color: #dcdcdc;
+    max-height: 1px;
+}
+
+QFrame[frameShape="5"] {  /* VLine */
+    color: #dcdcdc;
+    max-width: 1px;
+}

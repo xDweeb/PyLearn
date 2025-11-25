@@ -44,9 +44,7 @@ class LessonsView(QWidget):
         # Top bar with back button
         top_layout = QHBoxLayout()
         back_button = QPushButton("← Retour")
-        back_button.setStyleSheet(
-            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
-        )
+        back_button.setObjectName("backButton")
         back_button.setCursor(Qt.PointingHandCursor)
         back_button.clicked.connect(self._on_back_clicked)
         top_layout.addWidget(back_button)
@@ -59,12 +57,12 @@ class LessonsView(QWidget):
         header_layout.setSpacing(8)
 
         title_label = QLabel("Leçons du module")
+        title_label.setObjectName("titleLabel")
         title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        title_label.setStyleSheet("font-size: 24px; font-weight: 700;")
 
         subtitle_label = QLabel(f"{self._module_name}")
+        subtitle_label.setObjectName("subtitleLabel")
         subtitle_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        subtitle_label.setStyleSheet("font-size: 14px; color: #555555;")
 
         header_layout.addWidget(title_label)
         header_layout.addWidget(subtitle_label)
@@ -74,7 +72,6 @@ class LessonsView(QWidget):
         lessons_list_layout.setSpacing(12)
 
         # Hard-coded placeholders for lessons of Module 1
-        # 1. Introduction à Python — Terminée
         lesson1_card = self._create_lesson_card(
             lesson_id=1,
             title="Leçon 1 : Introduction à Python",
@@ -82,7 +79,6 @@ class LessonsView(QWidget):
         )
         lessons_list_layout.addWidget(lesson1_card)
 
-        # 2. La fonction print() — En cours
         lesson2_card = self._create_lesson_card(
             lesson_id=2,
             title="Leçon 2 : La fonction print()",
@@ -90,7 +86,6 @@ class LessonsView(QWidget):
         )
         lessons_list_layout.addWidget(lesson2_card)
 
-        # 3. La fonction input() — Verrouillée
         lesson3_card = self._create_lesson_card(
             lesson_id=3,
             title="Leçon 3 : La fonction input()",
@@ -98,7 +93,6 @@ class LessonsView(QWidget):
         )
         lessons_list_layout.addWidget(lesson3_card)
 
-        # 4. Commentaires en Python — Verrouillée
         lesson4_card = self._create_lesson_card(
             lesson_id=4,
             title="Leçon 4 : Commentaires en Python",
@@ -118,31 +112,10 @@ class LessonsView(QWidget):
         title: str,
         status: str,
     ) -> QFrame:
-        """Create a styled lesson card.
-
-        Args:
-            lesson_id: unique identifier for the lesson.
-            title: lesson title to display.
-            status: one of 'completed', 'in_progress', or 'locked'.
-
-        Layout inside the card (QHBoxLayout):
-        - Left: status icon (✔ for completed, ● for in_progress, 🔒 for locked).
-        - Middle: lesson title and status text.
-        - Right: "Ouvrir" button for unlocked lessons.
-        """
+        """Create a styled lesson card."""
         card = QFrame()
         card.setObjectName("lessonCard")
         card.setFrameShape(QFrame.StyledPanel)
-        card.setStyleSheet(
-            "#lessonCard {"
-            "  background-color: #f5f5f5;"
-            "  border-radius: 8px;"
-            "  padding: 10px;"
-            "}"
-            "#lessonCard:hover {"
-            "  background-color: #ececec;"
-            "}"
-        )
 
         layout = QHBoxLayout(card)
         layout.setContentsMargins(12, 8, 12, 8)
@@ -165,7 +138,6 @@ class LessonsView(QWidget):
         # Left: status icon
         icon_label = QLabel(icon)
         icon_label.setAlignment(Qt.AlignCenter)
-        icon_label.setStyleSheet("font-size: 16px;")
         layout.addWidget(icon_label)
 
         # Middle: title and status text stacked vertically
@@ -175,10 +147,7 @@ class LessonsView(QWidget):
         text_layout.setSpacing(2)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 14px; font-weight: 500;")
-
         status_label = QLabel(status_text)
-        status_label.setStyleSheet("font-size: 12px; color: #777777;")
 
         text_layout.addWidget(title_label)
         text_layout.addWidget(status_label)
@@ -188,9 +157,7 @@ class LessonsView(QWidget):
         # Right: "Ouvrir" button for unlocked lessons only
         if not locked:
             open_button = QPushButton("Ouvrir")
-            open_button.setStyleSheet(
-                "padding: 6px 14px; font-size: 13px; font-weight: 500;"
-            )
+            open_button.setObjectName("openButton")
             open_button.clicked.connect(
                 lambda _checked=False, lid=lesson_id: self._on_open_lesson(lid)
             )
@@ -202,10 +169,7 @@ class LessonsView(QWidget):
     # Signal emitters
     # ------------------------------------------------------------------
     def _on_open_lesson(self, lesson_id: int) -> None:
-        """Emit navigation signal with the selected lesson id.
-
-        This is UI-only: no database or business logic is involved.
-        """
+        """Emit navigation signal with the selected lesson id."""
         self.navigate_to_tasks.emit(lesson_id)
 
     def _on_back_clicked(self) -> None:

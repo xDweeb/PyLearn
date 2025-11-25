@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 
+
 class HomeView(QWidget):
     """Home screen view with main actions and module preview cards.
 
@@ -45,16 +46,12 @@ class HomeView(QWidget):
         header_layout.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
 
         title_label = QLabel("PyLearn Desktop")
+        title_label.setObjectName("titleLabel")
         title_label.setAlignment(Qt.AlignHCenter)
-        title_label.setStyleSheet(
-            "font-size: 32px; font-weight: 700;"
-        )
 
         subtitle_label = QLabel("Bienvenue dans votre espace d'apprentissage")
+        subtitle_label.setObjectName("subtitleLabel")
         subtitle_label.setAlignment(Qt.AlignHCenter)
-        subtitle_label.setStyleSheet(
-            "font-size: 16px; color: #555555;"
-        )
 
         header_layout.addWidget(title_label)
         header_layout.addWidget(subtitle_label)
@@ -66,18 +63,11 @@ class HomeView(QWidget):
 
         start_button = QPushButton("Commencer l'apprentissage")
         start_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        start_button.setStyleSheet(
-            "padding: 10px 24px;"
-            "font-size: 14px;"
-            "font-weight: 600;"
-        )
         start_button.clicked.connect(self._on_start_clicked)
 
         continue_button = QPushButton("Continuer")
+        continue_button.setObjectName("secondaryButton")
         continue_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        continue_button.setStyleSheet(
-            "padding: 8px 18px; font-size: 13px;"
-        )
         continue_button.clicked.connect(self._on_continue_clicked)
 
         buttons_layout.addWidget(start_button)
@@ -88,7 +78,7 @@ class HomeView(QWidget):
         modules_section_layout.setSpacing(12)
 
         section_title = QLabel("Aperçu des modules")
-        section_title.setStyleSheet("font-size: 18px; font-weight: 600;")
+        section_title.setObjectName("sectionTitle")
         modules_section_layout.addWidget(section_title)
 
         # Individual module cards (vertical list)
@@ -130,20 +120,10 @@ class HomeView(QWidget):
         self.setLayout(main_layout)
 
     def _create_module_card(self, title: str, status_text: str, locked: bool) -> QFrame:
-        """Create a simple horizontal module card with minimal styling.
-
-        The card uses a QHBoxLayout:
-        - Left: optional lock icon for locked modules.
-        - Middle: module title.
-        - Right: status label (e.g., percentage or "Verrouillé").
-        """
+        """Create a simple horizontal module card."""
         card = QFrame()
+        card.setObjectName("moduleCard")
         card.setFrameShape(QFrame.StyledPanel)
-        card.setStyleSheet(
-            "background-color: #f5f5f5;"
-            "border-radius: 8px;"
-            "padding: 10px;"
-        )
 
         layout = QHBoxLayout(card)
         layout.setContentsMargins(12, 8, 12, 8)
@@ -155,19 +135,16 @@ class HomeView(QWidget):
             lock_label.setAlignment(Qt.AlignCenter)
             layout.addWidget(lock_label)
         else:
-            # To keep alignment consistent, add an empty placeholder
             lock_label = QLabel("")
             layout.addWidget(lock_label)
 
         # Module title
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 14px; font-weight: 500;")
         layout.addWidget(title_label, stretch=1)
 
-        # Status text (e.g. "0%" or "Verrouillé")
+        # Status text
         status_label = QLabel(status_text)
         status_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        status_label.setStyleSheet("font-size: 13px; color: #777777;")
         layout.addWidget(status_label)
 
         return card
