@@ -1,0 +1,8 @@
+# PyLearn Desktop - Requirements
+# Install with: pip install -r requirements.txt
+
+# GUI Framework
+PySide6>=6.5.0
+
+# Build tools (for creating executable)
+pyinstaller>=6.0.0

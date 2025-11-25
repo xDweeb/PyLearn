@@ -3,14 +3,14 @@
 
 import os
 import sqlite3
+from utils.resource_path import get_database_path
 
 
 class Database:
     """Handles SQLite database connection (static methods)."""
 
-    # Resolve DB path relative to the project root (where main.py lives)
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DB_PATH = os.path.join(BASE_DIR, "assets", "pylearn.db")
+    # Use the resource path utility for PyInstaller compatibility
+    DB_PATH = get_database_path()
 
     @staticmethod
     def get_connection():
@@ -20,6 +20,8 @@ class Database:
     @staticmethod
     def initialize():
         """Initializes the database and tables."""
+        # Update DB_PATH in case it changed
+        Database.DB_PATH = get_database_path()
         from database.init_db import initialize_tables
         initialize_tables(Database.DB_PATH)
 
@@ -28,7 +30,7 @@ class DatabaseConnection:
     """Instance-based database connection manager for controllers."""
 
     def __init__(self):
-        self.db_path = Database.DB_PATH
+        self.db_path = get_database_path()
 
     def get_connection(self):
         """Returns a new database connection."""

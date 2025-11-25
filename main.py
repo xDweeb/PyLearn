@@ -5,6 +5,7 @@ import os
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget, QMessageBox
 
+from utils.resource_path import resource_path
 from database.db import Database
 from controllers.module_controller import ModuleController
 from controllers.lesson_controller import LessonController
@@ -285,11 +286,8 @@ if __name__ == "__main__":
     # Start Qt application
     app = QApplication(sys.argv)
 
-    # Load global stylesheet
-    style_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "assets", "styles", "style.qss"
-    )
+    # Load global stylesheet using resource_path for PyInstaller compatibility
+    style_path = resource_path(os.path.join("assets", "styles", "style.qss"))
     if os.path.exists(style_path):
         with open(style_path, "r", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
