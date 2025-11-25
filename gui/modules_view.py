@@ -12,16 +12,19 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
+
 class ModulesView(QWidget):
     """Modules screen view with a list of module cards.
 
     Signals:
         navigate_to_lessons(int): emitted when the user opens a module,
                                   passing the module_id.
+        navigate_back(): emitted when the user clicks the back button.
     """
 
-    # Navigation signal carrying the selected module id
+    # Navigation signals
     navigate_to_lessons = Signal(int)
+    navigate_back = Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -35,6 +38,19 @@ class ModulesView(QWidget):
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(40, 40, 40, 40)
         main_layout.setSpacing(24)
+
+        # Top bar with back button
+        top_layout = QHBoxLayout()
+        back_button = QPushButton("← Retour")
+        back_button.setStyleSheet(
+            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
+        )
+        back_button.setCursor(Qt.PointingHandCursor)
+        back_button.clicked.connect(self._on_back_clicked)
+        top_layout.addWidget(back_button)
+        top_layout.addStretch()
+
+        main_layout.addLayout(top_layout)
 
         # Header section
         header_layout = QVBoxLayout()
@@ -95,13 +111,7 @@ class ModulesView(QWidget):
         status_text: str,
         locked: bool,
     ) -> QFrame:
-        """Create a styled module card.
-
-        Layout inside the card (QHBoxLayout):
-        - Left: lock icon (🔒) for locked modules, or empty space if unlocked.
-        - Middle: module title and status text.
-        - Right: "Ouvrir" button for unlocked modules, nothing for locked ones.
-        """
+        """Create a styled module card."""
         card = QFrame()
         card.setObjectName("moduleCard")
         card.setFrameShape(QFrame.StyledPanel)
@@ -163,8 +173,9 @@ class ModulesView(QWidget):
     # Signal emitters
     # ------------------------------------------------------------------
     def _on_open_module(self, module_id: int) -> None:
-        """Emit navigation signal with the selected module id.
-
-        This is UI-only: no database or business logic is involved.
-        """
+        """Emit navigation signal with the selected module id."""
         self.navigate_to_lessons.emit(module_id)
+
+    def _on_back_clicked(self) -> None:
+        """Emit signal to navigate back to home."""
+        self.navigate_back.emit()

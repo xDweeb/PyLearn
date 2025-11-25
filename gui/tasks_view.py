@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 
+
 class TasksView(QWidget):
     """Tasks screen view with a sidebar task list and content area.
 
@@ -21,7 +22,7 @@ class TasksView(QWidget):
         task_selected(int): emitted when a task is clicked, passing the task_id.
         navigate_to_quiz(): emitted when the user navigates to the quiz view.
         navigate_to_exercise(): emitted when the user navigates to the exercise view.
-        navigate_back(): emitted for future Back button functionality.
+        navigate_back(): emitted when the user clicks the back button.
     """
 
     # Signals
@@ -70,8 +71,17 @@ class TasksView(QWidget):
         )
 
         layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(16, 24, 16, 24)
-        layout.setSpacing(16)
+        layout.setContentsMargins(16, 16, 16, 24)
+        layout.setSpacing(12)
+
+        # Back button at the top of sidebar
+        back_button = QPushButton("← Retour")
+        back_button.setStyleSheet(
+            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
+        )
+        back_button.setCursor(Qt.PointingHandCursor)
+        back_button.clicked.connect(self._on_back_clicked)
+        layout.addWidget(back_button)
 
         # Sidebar header
         header_label = QLabel("Tâches de la leçon")
@@ -259,3 +269,7 @@ class TasksView(QWidget):
             self.navigate_to_quiz.emit()
         elif task_id == 4:
             self.navigate_to_exercise.emit()
+
+    def _on_back_clicked(self) -> None:
+        """Emit signal to navigate back to lessons."""
+        self.navigate_back.emit()

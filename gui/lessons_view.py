@@ -19,10 +19,12 @@ class LessonsView(QWidget):
     Signals:
         navigate_to_tasks(int): emitted when the user opens a lesson,
                                 passing the lesson_id.
+        navigate_back(): emitted when the user clicks the back button.
     """
 
-    # Navigation signal carrying the selected lesson id
+    # Navigation signals
     navigate_to_tasks = Signal(int)
+    navigate_back = Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -38,6 +40,19 @@ class LessonsView(QWidget):
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(40, 40, 40, 40)
         main_layout.setSpacing(24)
+
+        # Top bar with back button
+        top_layout = QHBoxLayout()
+        back_button = QPushButton("← Retour")
+        back_button.setStyleSheet(
+            "padding: 6px 12px; font-size: 12px; font-weight: 500;"
+        )
+        back_button.setCursor(Qt.PointingHandCursor)
+        back_button.clicked.connect(self._on_back_clicked)
+        top_layout.addWidget(back_button)
+        top_layout.addStretch()
+
+        main_layout.addLayout(top_layout)
 
         # Header section: title + subtitle with module name placeholder
         header_layout = QVBoxLayout()
@@ -192,3 +207,7 @@ class LessonsView(QWidget):
         This is UI-only: no database or business logic is involved.
         """
         self.navigate_to_tasks.emit(lesson_id)
+
+    def _on_back_clicked(self) -> None:
+        """Emit signal to navigate back to modules."""
+        self.navigate_back.emit()

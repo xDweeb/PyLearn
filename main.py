@@ -23,6 +23,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PyLearn Desktop")
         self.setGeometry(100, 100, 1024, 768)
 
+        # Placeholder IDs for back navigation (will be updated by controllers later)
+        self.last_module_id = 1
+        self.last_lesson_id = 1
+
         # Stacked widget for navigation between views
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
@@ -71,16 +75,17 @@ class MainWindow(QMainWindow):
 
     def _connect_navigation_signals(self) -> None:
         """Connect navigation signals from views to navigation actions."""
+        # Forward navigation signals
         self.home_view.navigate_to_modules.connect(
             lambda: self.navigation.navigate("modules")
         )
 
         self.modules_view.navigate_to_lessons.connect(
-            lambda: self.navigation.navigate("lessons")
+            self._on_navigate_to_lessons
         )
 
         self.lessons_view.navigate_to_tasks.connect(
-            lambda: self.navigation.navigate("tasks")
+            self._on_navigate_to_tasks
         )
 
         self.tasks_view.navigate_to_quiz.connect(
@@ -90,6 +95,41 @@ class MainWindow(QMainWindow):
         self.tasks_view.navigate_to_exercise.connect(
             lambda: self.navigation.navigate("exercise")
         )
+
+        # Back navigation signals
+        self.modules_view.navigate_back.connect(
+            lambda: self.navigation.navigate("home")
+        )
+
+        self.lessons_view.navigate_back.connect(
+            lambda: self.navigation.navigate("modules")
+        )
+
+        self.tasks_view.navigate_back.connect(
+            lambda: self.navigation.navigate("lessons")
+        )
+
+        self.quiz_view.navigate_back.connect(
+            lambda: self.navigation.navigate("tasks")
+        )
+
+        self.typing_view.navigate_back.connect(
+            lambda: self.navigation.navigate("tasks")
+        )
+
+        self.exercise_view.navigate_back.connect(
+            lambda: self.navigation.navigate("tasks")
+        )
+
+    def _on_navigate_to_lessons(self, module_id: int) -> None:
+        """Handle navigation to lessons, storing the module_id."""
+        self.last_module_id = module_id
+        self.navigation.navigate("lessons")
+
+    def _on_navigate_to_tasks(self, lesson_id: int) -> None:
+        """Handle navigation to tasks, storing the lesson_id."""
+        self.last_lesson_id = lesson_id
+        self.navigation.navigate("tasks")
 
     def navigate_to(self, view_name: str) -> None:
         """Switch the current widget in the stacked widget by view name."""
